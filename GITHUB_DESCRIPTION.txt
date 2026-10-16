@@ -1,0 +1,7 @@
+Description (paste into the repo "About" box, 259 chars, limit 350):
+ThesisMate: a thesis supervision and research management platform for BRAC University CSE470. React frontend + Java 21 Spring Boot (Spring MVC, JPA, PostgreSQL). Supervisor matching, allocation, proposal versioning, reviews, milestones and defense evaluation.
+
+Topics:
+spring-boot java react postgresql mvc thesis-management software-engineering cse470 bracu
+
+Website: (leave empty)
