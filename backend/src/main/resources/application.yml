@@ -1,3 +1,7 @@
+thesismate:
+  # Test accounts are only created with the "dev" profile (see application-dev.yml).
+  seed: ${SEED_DATA:false}
+
 spring:
   application:
     name: thesismate
@@ -15,3 +19,10 @@ spring:
     enabled: true
 server:
   port: 8080
+  servlet:
+    session:
+      cookie:
+        http-only: true
+        same-site: lax
+        # Set SESSION_COOKIE_SECURE=true whenever the app is served over HTTPS.
+        secure: ${SESSION_COOKIE_SECURE:false}

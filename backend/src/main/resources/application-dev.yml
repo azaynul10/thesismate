@@ -1,0 +1,4 @@
+# Local development only. Activate with: mvn spring-boot:run -Dspring-boot.run.profiles=dev
+# Creates the test accounts in DevDataSeeder. Turn off with SEED_DATA=false.
+thesismate:
+  seed: ${SEED_DATA:true}
