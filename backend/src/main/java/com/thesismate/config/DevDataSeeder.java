@@ -5,11 +5,17 @@ import com.thesismate.model.Role;
 import com.thesismate.repository.AppUserRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
-/** Creates test accounts for development. Safe to run repeatedly. Turn off with SEED_DATA=false. */
+/**
+ * Creates test accounts for development. Safe to run repeatedly.
+ * Runs only with the "dev" profile AND thesismate.seed=true, so these fixed-password
+ * accounts can never be created by a normal (non-dev) start-up.
+ */
 @Component
+@Profile("dev")
 @ConditionalOnProperty(name = "thesismate.seed", havingValue = "true")
 public class DevDataSeeder implements CommandLineRunner {
 

@@ -6,8 +6,9 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 public record RegisterRequest(
-        @NotBlank @Email String email,
-        @NotBlank String fullName,
-        @NotBlank @Size(min = 8, max = 100) String password,
+        @NotBlank @Email @Size(max = 255) String email,
+        @NotBlank @Size(max = 255) String fullName,
+        // BCrypt only uses the first 72 bytes, so longer passwords are rejected (see AuthService)
+        @NotBlank @Size(min = 8, max = 72) String password,
         @NotBlank @Pattern(regexp = "\\d{8}", message = "Student ID must be 8 digits") String studentId) {
 }

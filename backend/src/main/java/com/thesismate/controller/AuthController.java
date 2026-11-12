@@ -8,8 +8,11 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
+import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.context.SecurityContextRepository;
+import org.springframework.security.web.csrf.CsrfLogoutHandler;
+import org.springframework.security.web.csrf.CsrfTokenRepository;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -18,6 +21,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.thesismate.config.SecurityConfig;
 import com.thesismate.dto.LoginRequest;
 import com.thesismate.dto.RegisterRequest;
 import com.thesismate.dto.UserResponse;
@@ -34,10 +38,15 @@ public class AuthController {
     private final AuthService authService;
     private final AuthenticationManager authenticationManager;
     private final SecurityContextRepository contextRepository = new HttpSessionSecurityContextRepository();
+    private final SessionAuthenticationStrategy loginSessionStrategy;
+    private final CsrfLogoutHandler csrfLogoutHandler;
 
-    public AuthController(AuthService authService, AuthenticationManager authenticationManager) {
+    public AuthController(AuthService authService, AuthenticationManager authenticationManager,
+                          CsrfTokenRepository csrfTokenRepository) {
         this.authService = authService;
         this.authenticationManager = authenticationManager;
+        this.loginSessionStrategy = SecurityConfig.loginSessionStrategy(csrfTokenRepository);
+        this.csrfLogoutHandler = new CsrfLogoutHandler(csrfTokenRepository);
     }
 
     @PostMapping("/register")
@@ -59,6 +68,8 @@ public class AuthController {
         SecurityContext context = SecurityContextHolder.createEmptyContext();
         context.setAuthentication(auth);
         SecurityContextHolder.setContext(context);
+        // New session id + new CSRF token after login (prevents session fixation).
+        loginSessionStrategy.onAuthentication(auth, httpRequest, httpResponse);
         contextRepository.saveContext(context, httpRequest, httpResponse);
         return authService.currentUser(auth.getName());
     }
@@ -67,6 +78,7 @@ public class AuthController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void logout(Authentication auth, HttpServletRequest request, HttpServletResponse response) {
         new SecurityContextLogoutHandler().logout(request, response, auth);
+        csrfLogoutHandler.logout(request, response, auth);
     }
 
     @GetMapping("/me")
