@@ -79,9 +79,9 @@ Check: `GET http://localhost:8080/api/health` → `{"status":"UP"}`. Tests: `mvn
 | Name | Student ID | GitHub | Module |
 |---|---|---|---|
 | Zaynul Abedin Miah | 22341034 | [@azaynul10](https://github.com/azaynul10) | A |
-| Mahdinam Saif Prisun | 23201131 | | B |
-| Aivee Aktar | 23301568 | | C |
-| Asif Ahmed Apol | 22101322 | | D |
+| Mahdinam Saif Prisun | 23201131 | [@PrisunSaif](https://github.com/PrisunSaif) | B |
+| Aivee Aktar | 23301568 | [@ivyaktar](https://github.com/ivyaktar) | C |
+| Asif Ahmed Apol | 22101322 | [@AsifAhmedApol](https://github.com/AsifAhmedApol) | D |
 
 Faculty: Nazmul Islam (NZU), CSE470 Section 02
 
