@@ -1,3 +1,6 @@
+thesismate:
+  seed: ${SEED_DATA:true}
+
 spring:
   application:
     name: thesismate
