@@ -1,5 +1,6 @@
 package com.thesismate.service;
 
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -8,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.thesismate.dto.CapacityOverrideView;
 import com.thesismate.dto.OverrideCapacityRequest;
 import com.thesismate.dto.SupervisorCapacityView;
 import com.thesismate.dto.UpdateCapacityRequest;
@@ -113,6 +115,16 @@ public class SupervisorCapacityService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Semester is required");
         }
         return semester.trim();
+    }
+
+    // ei supervisor er override history, notun ta age
+    @Transactional(readOnly = true)
+    public List<CapacityOverrideView> getOverrides(Long profileId) {
+        return overrides.findByProfileIdOrderByCreatedAtDesc(profileId).stream()
+                .map(o -> new CapacityOverrideView(o.getId(), o.getSemester(),
+                        o.getOldCapacity(), o.getNewCapacity(), o.getReason(),
+                        o.getCoordinator().getFullName(), o.getCreatedAt()))
+                .toList();
     }
 
     private SupervisorProfile getOrCreateProfile(String email) {
