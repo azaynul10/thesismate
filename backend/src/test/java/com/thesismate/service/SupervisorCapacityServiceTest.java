@@ -45,7 +45,7 @@ class SupervisorCapacityServiceTest {
     private SupervisorProfile profile() {
         AppUser user = new AppUser("sup@t.test", "Sup One", Role.SUPERVISOR, "x", null);
         ReflectionTestUtils.setField(user, "id", 7L);
-        SupervisorProfile profile = new SupervisorProfile(user, "bio", "UB705");
+        SupervisorProfile profile = new SupervisorProfile(user, "bio", "07A-01C");
         ReflectionTestUtils.setField(profile, "id", 1L);
         return profile;
     }
