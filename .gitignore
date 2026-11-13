@@ -20,3 +20,5 @@ Thumbs.db
 # Logs / uploads
 *.log
 uploads/
+.history/
+*.tsbuildinfo
