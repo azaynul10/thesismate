@@ -3,11 +3,10 @@ package com.thesismate.config;
 import java.util.EnumSet;
 import java.util.Set;
 
-import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.annotation.Profile;
-import org.springframework.core.Ordered;
-import org.springframework.core.annotation.Order;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
 import com.thesismate.model.SupervisorCapacity;
@@ -21,12 +20,12 @@ import com.thesismate.repository.SupervisorProfileRepository;
  * Dev-only profiles for the seeded supervisors, so supervision requests can be tried end to end.
  * supervisor1 takes every track with 2 slots, supervisor2 takes thesis and project with 1 slot,
  * supervisor3 takes project and internship with 3 slots. Safe to run repeatedly.
+ * Runs once the application has started, so the seeded accounts already exist.
  */
 @Component
 @Profile("dev")
 @ConditionalOnProperty(name = "thesismate.seed", havingValue = "true")
-@Order(Ordered.LOWEST_PRECEDENCE)
-public class DevSupervisorSeeder implements CommandLineRunner {
+public class DevSupervisorSeeder {
 
     static final String SEMESTER = "Spring 2027";
 
@@ -42,8 +41,8 @@ public class DevSupervisorSeeder implements CommandLineRunner {
         this.capacities = capacities;
     }
 
-    @Override
-    public void run(String... args) {
+    @EventListener(ApplicationReadyEvent.class)
+    public void seed() {
         seed("supervisor1@thesismate.test", "07A-01C", Set.of("Machine Learning", "Computer Vision"),
                 EnumSet.allOf(Track.class), 2);
         seed("supervisor2@thesismate.test", "07B-02A", Set.of("Software Engineering", "Databases"),
