@@ -2,11 +2,10 @@ package com.thesismate.config;
 
 import java.math.BigDecimal;
 
-import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.annotation.Profile;
-import org.springframework.core.Ordered;
-import org.springframework.core.annotation.Order;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
 import com.thesismate.model.StudentRecord;
@@ -16,13 +15,12 @@ import com.thesismate.repository.StudentRecordRepository;
 /**
  * Dev-only credits and CGPA for the seeded students (20000001 to 20000010).
  * Chosen to cover the boundaries of the F6 eligibility rules. Safe to run repeatedly.
- * Needs the coordinator account from DevDataSeeder; if it is missing, restart once.
+ * Runs once the application has started, so the seeded accounts already exist.
  */
 @Component
 @Profile("dev")
 @ConditionalOnProperty(name = "thesismate.seed", havingValue = "true")
-@Order(Ordered.LOWEST_PRECEDENCE)
-public class DevStudentRecordSeeder implements CommandLineRunner {
+public class DevStudentRecordSeeder {
 
     private final AppUserRepository users;
     private final StudentRecordRepository records;
@@ -32,8 +30,8 @@ public class DevStudentRecordSeeder implements CommandLineRunner {
         this.records = records;
     }
 
-    @Override
-    public void run(String... args) {
+    @EventListener(ApplicationReadyEvent.class)
+    public void seed() {
         var coordinator = users.findByEmail("coordinator@thesismate.test");
         if (coordinator.isEmpty()) {
             return;
