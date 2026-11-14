@@ -7,6 +7,9 @@ interface Props {
 }
 
 export default function Navbar({ user, onLogout }: Props) {
+  const linkClass = ({ isActive }: { isActive: boolean }) =>
+    `nav-link px-3 ${isActive ? 'fw-semibold text-primary' : 'text-secondary'}`;
+
   return (
     <nav className="navbar navbar-expand bg-white border-bottom" aria-label="Main navigation">
       <div className="container">
@@ -14,24 +17,19 @@ export default function Navbar({ user, onLogout }: Props) {
           ThesisMate
         </Link>
         <div className="navbar-nav me-auto">
-          {user && (
-            <NavLink
-              to="/supervisors"
-              className={({ isActive }) =>
-                `nav-link px-3 ${isActive ? 'fw-semibold text-primary' : 'text-secondary'}`
-              }
-            >
-              Supervisors
+          {user?.role === 'STUDENT' && (
+            <NavLink to="/groups" className={linkClass}>
+              My Group
             </NavLink>
           )}
           {user?.role === 'SUPERVISOR' && (
-            <NavLink
-              to="/supervisor/capacity"
-              className={({ isActive }) =>
-                `nav-link px-3 ${isActive ? 'fw-semibold text-primary' : 'text-secondary'}`
-              }
-            >
+            <NavLink to="/supervisor/capacity" className={linkClass}>
               My Capacity
+            </NavLink>
+          )}
+          {user?.role === 'COORDINATOR' && (
+            <NavLink to="/coordinator/student-records" className={linkClass}>
+              Student Records
             </NavLink>
           )}
         </div>
