@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.thesismate.dto.AllocationResponse;
 import com.thesismate.dto.SupervisionRequestResponse;
 import com.thesismate.model.Allocation;
 import com.thesismate.model.AppUser;
@@ -211,6 +212,25 @@ public class SupervisionRequestService {
         return toResponse(request);
     }
 
+    @Transactional(readOnly = true)
+    public List<AllocationResponse> getGroupAllocations(Long userId, Long groupId) {
+        boolean isMember = members.findByGroupIdAndActiveTrue(groupId).stream()
+                .anyMatch(m -> m.getMember().getId().equals(userId));
+        if (!isMember) {
+            throw error(HttpStatus.FORBIDDEN, "You are not a member of this group");
+        }
+        return allocations.findByGroupIdAndStatus(groupId, Allocation.Status.ACTIVE).stream()
+                .map(this::toAllocationResponse)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<AllocationResponse> getMyAllocations(Long supervisorId) {
+        return allocations.findBySupervisorIdAndStatus(supervisorId, Allocation.Status.ACTIVE).stream()
+                .map(this::toAllocationResponse)
+                .toList();
+    }
+
     // ---- helpers ----
 
     private SupervisionRequest find(Long requestId) {
@@ -244,6 +264,16 @@ public class SupervisionRequestService {
                 r.getSupervisor().getId(), r.getSupervisor().getFullName(), r.getSupervisorRole(),
                 r.getPitch(), r.getStatus().name(), r.getRejectionReason(), memberNames,
                 r.getCreatedAt(), r.getExpiresAt(), r.getRespondedAt());
+    }
+
+    private AllocationResponse toAllocationResponse(Allocation a) {
+        List<String> memberNames = members.findByGroupIdAndActiveTrue(a.getGroup().getId()).stream()
+                .map(m -> m.getMember().getFullName() + " (" + m.getMember().getStudentId() + ")")
+                .toList();
+        return new AllocationResponse(
+                a.getId(), a.getGroup().getId(), a.getGroup().getTrack(), a.getSemester(),
+                a.getSupervisor().getId(), a.getSupervisor().getFullName(), a.getSupervisorRole(),
+                memberNames, a.getCreatedAt());
     }
 
     private ResponseStatusException error(HttpStatus status, String message) {

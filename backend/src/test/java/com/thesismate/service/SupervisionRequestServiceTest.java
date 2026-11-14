@@ -341,4 +341,35 @@ class SupervisionRequestServiceTest {
 
         assertEquals(SupervisionRequest.Status.PENDING, sameRole.getStatus());
     }
+
+        // ---- allocations ----
+
+    private Allocation allocation(long id) {
+        SupervisionRequest r = pending(30L + id, LocalDateTime.now().plusDays(3));
+        Allocation a = new Allocation(group, supervisor, SupervisorRole.SUPERVISOR, SEMESTER, r);
+        ReflectionTestUtils.setField(a, "id", id);
+        return a;
+    }
+
+    @Test
+    void membersSeeTheirGroupsSupervisors() {
+        Allocation a = allocation(1L);
+        when(members.findByGroupIdAndActiveTrue(10L)).thenReturn(List.of(new GroupMember(group, leader)));
+        when(allocations.findByGroupIdAndStatus(10L, Allocation.Status.ACTIVE)).thenReturn(List.of(a));
+        assertEquals(1, service.getGroupAllocations(1L, 10L).size());
+    }
+
+    @Test
+    void nonMembersCannotSeeAGroupsSupervisors() {
+        when(members.findByGroupIdAndActiveTrue(10L)).thenReturn(List.of(new GroupMember(group, leader)));
+        assertStatus(403, () -> service.getGroupAllocations(2L, 10L));
+    }
+
+    @Test
+    void supervisorSeesTheirOwnGroups() {
+        Allocation a = allocation(1L);
+        when(allocations.findBySupervisorIdAndStatus(20L, Allocation.Status.ACTIVE))
+                .thenReturn(List.of(a));
+        assertEquals(1, service.getMyAllocations(20L).size());
+    }
 }
