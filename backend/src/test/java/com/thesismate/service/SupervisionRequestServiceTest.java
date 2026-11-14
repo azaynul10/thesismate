@@ -14,6 +14,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.function.Executable;
 import static org.mockito.ArgumentMatchers.any;
 import org.mockito.Mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -36,6 +38,8 @@ import com.thesismate.repository.GroupMemberRepository;
 import com.thesismate.repository.StudentGroupRepository;
 import com.thesismate.repository.SupervisionRequestRepository;
 
+import jakarta.persistence.EntityManager;
+
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 class SupervisionRequestServiceTest {
@@ -48,6 +52,7 @@ class SupervisionRequestServiceTest {
     @Mock SupervisionRequestRepository requests;
     @Mock AllocationRepository allocations;
     @Mock SupervisorCapacityLookup lookup;
+    @Mock EntityManager em;
 
     private SupervisionRequestService service;
     private AppUser leader;
@@ -57,7 +62,7 @@ class SupervisionRequestServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new SupervisionRequestService(users, groups, members, requests, allocations, lookup);
+        service = new SupervisionRequestService(users, groups, members, requests, allocations, lookup, em);
         leader = person(1L, "20000001", Role.STUDENT);
         otherStudent = person(2L, "20000002", Role.STUDENT);
         supervisor = person(20L, null, Role.SUPERVISOR);
@@ -84,6 +89,13 @@ class SupervisionRequestServiceTest {
                 "Our thesis idea", leader, expiresAt);
         ReflectionTestUtils.setField(r, "id", id);
         when(requests.findById(id)).thenReturn(Optional.of(r));
+        return r;
+    }
+
+    private SupervisionRequest groupRequest(long id, long supervisorId, SupervisorRole role) {
+        SupervisionRequest r = new SupervisionRequest(group, person(supervisorId, null, Role.SUPERVISOR), role,
+                "Another pitch", leader, LocalDateTime.now().plusDays(3));
+        ReflectionTestUtils.setField(r, "id", id);
         return r;
     }
 
@@ -233,5 +245,100 @@ class SupervisionRequestServiceTest {
     void membersCanListTheirGroupsRequests() {
         when(members.findByGroupIdAndActiveTrue(10L)).thenReturn(List.of(new GroupMember(group, leader)));
         assertTrue(service.getGroupRequests(1L, 10L).isEmpty());
+    }
+
+    // ---- accepting ----
+
+    @Test
+    void supervisorCanAccept() {
+        SupervisionRequest r = pending(5L, LocalDateTime.now().plusDays(3));
+        service.accept(20L, 5L);
+        assertEquals(SupervisionRequest.Status.ACCEPTED, r.getStatus());
+        verify(allocations).save(any(Allocation.class));
+    }
+
+    @Test
+    void onlyTheAddressedSupervisorCanAccept() {
+        pending(5L, LocalDateTime.now().plusDays(3));
+        assertStatus(403, () -> service.accept(21L, 5L));
+        verify(allocations, never()).save(any(Allocation.class));
+    }
+
+    @Test
+    void cannotAcceptAnExpiredRequest() {
+        SupervisionRequest r = pending(5L, LocalDateTime.now().minusDays(1));
+        assertStatus(409, () -> service.accept(20L, 5L));
+        assertEquals(SupervisionRequest.Status.PENDING, r.getStatus());
+        verify(allocations, never()).save(any(Allocation.class));
+    }
+
+    @Test
+    void cannotAcceptTwice() {
+        pending(5L, LocalDateTime.now().plusDays(3));
+        service.accept(20L, 5L);
+        assertStatus(409, () -> service.accept(20L, 5L));
+        verify(allocations, times(1)).save(any(Allocation.class));
+    }
+
+    @Test
+    void cannotAcceptWhenTheSupervisorIsFull() {
+        SupervisionRequest r = pending(5L, LocalDateTime.now().plusDays(3));
+        when(allocations.countBySupervisorIdAndSemesterAndStatus(20L, SEMESTER, Allocation.Status.ACTIVE))
+                .thenReturn(3L);
+        assertStatus(409, () -> service.accept(20L, 5L));
+        assertEquals(SupervisionRequest.Status.PENDING, r.getStatus());
+        verify(allocations, never()).save(any(Allocation.class));
+    }
+
+    @Test
+    void cannotAcceptWhenTheGroupAlreadyHasTwoInThatRole() {
+        pending(5L, LocalDateTime.now().plusDays(3));
+        when(allocations.countByGroupIdAndSupervisorRoleAndStatus(
+                10L, SupervisorRole.SUPERVISOR, Allocation.Status.ACTIVE)).thenReturn(2L);
+        assertStatus(409, () -> service.accept(20L, 5L));
+        verify(allocations, never()).save(any(Allocation.class));
+    }
+
+    @Test
+    void cannotAcceptWhenAlreadyAssignedToTheGroup() {
+        pending(5L, LocalDateTime.now().plusDays(3));
+        when(allocations.existsByGroupIdAndSupervisorIdAndStatus(10L, 20L, Allocation.Status.ACTIVE))
+                .thenReturn(true);
+        assertStatus(409, () -> service.accept(20L, 5L));
+    }
+
+    @Test
+    void cannotAcceptWhenTheSupervisorNoLongerTakesTheTrack() {
+        pending(5L, LocalDateTime.now().plusDays(3));
+        when(lookup.tracksFor(20L)).thenReturn(EnumSet.of(Track.PROJECT));
+        assertStatus(400, () -> service.accept(20L, 5L));
+    }
+
+    @Test
+    void fillingARoleWithdrawsTheOtherPendingRequestsForThatRole() {
+        SupervisionRequest accepted = pending(5L, LocalDateTime.now().plusDays(3));
+        SupervisionRequest sameRole = groupRequest(6L, 21L, SupervisorRole.SUPERVISOR);
+        SupervisionRequest otherRole = groupRequest(7L, 22L, SupervisorRole.CO_SUPERVISOR);
+        when(allocations.countByGroupIdAndSupervisorRoleAndStatus(
+                10L, SupervisorRole.SUPERVISOR, Allocation.Status.ACTIVE)).thenReturn(1L);
+        when(requests.findByGroupIdAndStatus(10L, SupervisionRequest.Status.PENDING))
+                .thenReturn(List.of(accepted, sameRole, otherRole));
+
+        service.accept(20L, 5L);
+
+        assertEquals(SupervisionRequest.Status.WITHDRAWN, sameRole.getStatus());
+        assertEquals(SupervisionRequest.Status.PENDING, otherRole.getStatus());
+    }
+
+    @Test
+    void otherRequestsStayWhileTheRoleHasRoomLeft() {
+        SupervisionRequest accepted = pending(5L, LocalDateTime.now().plusDays(3));
+        SupervisionRequest sameRole = groupRequest(6L, 21L, SupervisorRole.SUPERVISOR);
+        when(requests.findByGroupIdAndStatus(10L, SupervisionRequest.Status.PENDING))
+                .thenReturn(List.of(accepted, sameRole));
+
+        service.accept(20L, 5L);
+
+        assertEquals(SupervisionRequest.Status.PENDING, sameRole.getStatus());
     }
 }

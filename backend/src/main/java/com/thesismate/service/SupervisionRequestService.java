@@ -21,6 +21,9 @@ import com.thesismate.repository.GroupMemberRepository;
 import com.thesismate.repository.StudentGroupRepository;
 import com.thesismate.repository.SupervisionRequestRepository;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
+
 /** F7: groups pitch supervisors; supervisors reject or accept. */
 @Service
 public class SupervisionRequestService {
@@ -35,19 +38,22 @@ public class SupervisionRequestService {
     private final SupervisionRequestRepository requests;
     private final AllocationRepository allocations;
     private final SupervisorCapacityLookup lookup;
+    private final EntityManager entityManager;
 
     public SupervisionRequestService(AppUserRepository users,
                                      StudentGroupRepository groups,
                                      GroupMemberRepository members,
                                      SupervisionRequestRepository requests,
                                      AllocationRepository allocations,
-                                     SupervisorCapacityLookup lookup) {
+                                     SupervisorCapacityLookup lookup,
+                                     EntityManager entityManager) {
         this.users = users;
         this.groups = groups;
         this.members = members;
         this.requests = requests;
         this.allocations = allocations;
         this.lookup = lookup;
+        this.entityManager = entityManager;;
     }
 
     @Transactional
@@ -147,6 +153,62 @@ public class SupervisionRequestService {
                 .filter(r -> r.getExpiresAt().isAfter(now))
                 .map(this::toResponse)
                 .toList();
+    }
+
+    /**
+     * Accepting runs in one transaction: lock the supervisor and the group, re-check every limit,
+     * create the allocation, and close the group's other requests for a role that is now full.
+     */
+    @Transactional
+    public SupervisionRequestResponse accept(Long userId, Long requestId) {
+        SupervisionRequest request = find(requestId);
+        if (!request.getSupervisor().getId().equals(userId)) {
+            throw error(HttpStatus.FORBIDDEN, "This request is not addressed to you");
+        }
+
+        // Lock order is always supervisor first, then group, so two acceptances cannot deadlock.
+        entityManager.find(AppUser.class, userId, LockModeType.PESSIMISTIC_WRITE);
+        StudentGroup group = groups.findByIdForUpdate(request.getGroup().getId())
+                .orElseThrow(() -> error(HttpStatus.NOT_FOUND, "Group not found"));
+        // The request may have been withdrawn while we waited for the locks.
+        entityManager.refresh(request);
+
+        requirePending(request);
+        requireNotExpired(request);
+        if (group.getStatus() != StudentGroup.Status.ACTIVE) {
+            throw error(HttpStatus.CONFLICT, "This group is no longer active");
+        }
+        SupervisorRole role = request.getSupervisorRole();
+        if (!lookup.tracksFor(userId).contains(group.getTrack())) {
+            throw error(HttpStatus.BAD_REQUEST, "You do not supervise the " + group.getTrack() + " track");
+        }
+        if (allocations.existsByGroupIdAndSupervisorIdAndStatus(group.getId(), userId, Allocation.Status.ACTIVE)) {
+            throw error(HttpStatus.CONFLICT, "You are already assigned to this group");
+        }
+        long roleCount = allocations.countByGroupIdAndSupervisorRoleAndStatus(
+                group.getId(), role, Allocation.Status.ACTIVE);
+        if (roleCount >= MAX_PER_ROLE) {
+            throw error(HttpStatus.CONFLICT, "This group already has " + MAX_PER_ROLE + " "
+                    + roleLabel(role) + "s");
+        }
+        long used = allocations.countBySupervisorIdAndSemesterAndStatus(
+                userId, group.getSemester(), Allocation.Status.ACTIVE);
+        if (used >= lookup.capacityFor(userId, group.getSemester())) {
+            throw error(HttpStatus.CONFLICT, "You have no free slots this semester");
+        }
+
+        allocations.save(new Allocation(group, request.getSupervisor(), role, group.getSemester(), request));
+        request.accept();
+
+        if (roleCount + 1 >= MAX_PER_ROLE) {
+            for (SupervisionRequest other : requests.findByGroupIdAndStatus(
+                    group.getId(), SupervisionRequest.Status.PENDING)) {
+                if (!other.getId().equals(request.getId()) && other.getSupervisorRole() == role) {
+                    other.withdraw();
+                }
+            }
+        }
+        return toResponse(request);
     }
 
     // ---- helpers ----
