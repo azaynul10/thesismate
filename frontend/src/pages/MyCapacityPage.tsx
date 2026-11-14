@@ -26,7 +26,7 @@ const ALL_TRACKS: { id: Track; label: string }[] = [
   { id: 'INTERNSHIP', label: 'Internship' },
 ];
 
-const PRESET_SEMESTERS = ['Fall 2026', 'Spring 2027', 'Summer 2027'];
+const PRESET_SEMESTERS = ['Spring 2027', 'Fall 2026', 'Summer 2027'];
 const BRACU_ROOM_REGEX = /^[0-9]{2}[A-Z]-[0-9]{2}[A-Z]{1,3}$/;
 
 interface Props {
@@ -35,7 +35,7 @@ interface Props {
 }
 
 export default function MyCapacityPage({ user, authChecked }: Props) {
-  const [semester, setSemester] = useState('Fall 2026');
+  const [semester, setSemester] = useState('Spring 2027');
   const [customSemester, setCustomSemester] = useState('');
   const [useCustomSemester, setUseCustomSemester] = useState(false);
 

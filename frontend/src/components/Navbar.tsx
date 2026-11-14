@@ -14,6 +14,16 @@ export default function Navbar({ user, onLogout }: Props) {
           ThesisMate
         </Link>
         <div className="navbar-nav me-auto">
+          {user && (
+            <NavLink
+              to="/supervisors"
+              className={({ isActive }) =>
+                `nav-link px-3 ${isActive ? 'fw-semibold text-primary' : 'text-secondary'}`
+              }
+            >
+              Supervisors
+            </NavLink>
+          )}
           {user?.role === 'SUPERVISOR' && (
             <NavLink
               to="/supervisor/capacity"

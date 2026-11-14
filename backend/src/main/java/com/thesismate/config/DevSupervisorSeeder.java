@@ -43,24 +43,37 @@ public class DevSupervisorSeeder {
 
     @EventListener(ApplicationReadyEvent.class)
     public void seed() {
-        seed("supervisor1@thesismate.test", "07A-01C", Set.of("Machine Learning", "Computer Vision"),
+        seed("supervisor1@thesismate.test", "07A-01C",
+                "Professor, CSE · Researching Deep Learning, Ambient Intelligence, IoT & Computer Vision.",
+                Set.of("Machine Learning", "Computer Vision", "Deep Learning"),
                 EnumSet.allOf(Track.class), 2);
-        seed("supervisor2@thesismate.test", "07B-02A", Set.of("Software Engineering", "Databases"),
+        seed("supervisor2@thesismate.test", "07B-02L",
+                "Professor, CSE · Focused on AI, Bioinformatics, Metaheuristics & Software Engineering.",
+                Set.of("Software Engineering", "Databases", "Bioinformatics"),
                 EnumSet.of(Track.THESIS, Track.PROJECT), 1);
-        seed("supervisor3@thesismate.test", "08A-03B", Set.of("Networks", "Security"),
+        seed("supervisor3@thesismate.test", "08A-03C",
+                "Professor, CSE · Working on Cybersecurity, Blockchain, Decentralized Identity & Networks.",
+                Set.of("Networks", "Security", "Blockchain"),
                 EnumSet.of(Track.PROJECT, Track.INTERNSHIP), 3);
     }
 
-    private void seed(String email, String room, Set<String> areas, Set<Track> tracks, int capacity) {
+    private void seed(String email, String room, String bio, Set<String> areas, Set<Track> tracks, int capacity) {
         users.findByEmail(email).ifPresent(user -> {
-            if (profiles.findByUserId(user.getId()).isPresent()) {
-                return;
+            SupervisorProfile profile = profiles.findByUserId(user.getId()).orElseGet(() -> {
+                SupervisorProfile created = new SupervisorProfile(user, bio, room);
+                created.setResearchAreas(areas);
+                created.setTracks(tracks);
+                return profiles.save(created);
+            });
+            if (profile.getBio() == null || profile.getBio().isBlank()
+                    || "Dev supervisor profile".equals(profile.getBio())) {
+                profile.setBio(bio);
+                profile.setOfficeRoom(room);
+                profiles.save(profile);
             }
-            SupervisorProfile profile = new SupervisorProfile(user, "Dev supervisor profile", room);
-            profile.setResearchAreas(areas);
-            profile.setTracks(tracks);
-            SupervisorProfile saved = profiles.save(profile);
-            capacities.save(new SupervisorCapacity(saved, SEMESTER, capacity));
+            if (capacities.findByProfileIdAndSemester(profile.getId(), SEMESTER).isEmpty()) {
+                capacities.save(new SupervisorCapacity(profile, SEMESTER, capacity));
+            }
         });
     }
 }

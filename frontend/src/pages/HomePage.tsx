@@ -40,11 +40,16 @@ export default function HomePage({ user }: Props) {
           <div className="small text-secondary">
             Signed in as <strong className="text-dark">{user.fullName}</strong> ({user.role})
           </div>
-          {user.role === 'SUPERVISOR' && (
-            <Link to="/supervisor/capacity" className="btn btn-primary btn-sm">
-              Open My Capacity
+          <div className="d-flex flex-wrap gap-2">
+            <Link to="/supervisors" className="btn btn-outline-primary btn-sm">
+              Browse Supervisors
             </Link>
-          )}
+            {user.role === 'SUPERVISOR' && (
+              <Link to="/supervisor/capacity" className="btn btn-primary btn-sm">
+                Open My Capacity
+              </Link>
+            )}
+          </div>
         </div>
       ) : (
         <div className="border-top pt-3 mt-2">
