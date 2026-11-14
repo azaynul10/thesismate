@@ -10,6 +10,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 
 /** One error format for the whole API: { status, message, fieldErrors }. */
 @RestControllerAdvice
@@ -36,5 +37,11 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiError> conflict(DataIntegrityViolationException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(new ApiError(409, "Resource already exists or violates a data constraint", Map.of()));
+    }
+
+    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+    public ResponseEntity<ApiError> optimisticLock(ObjectOptimisticLockingFailureException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(new ApiError(409, "Record was updated by another user. Refresh and try again.", Map.of()));
     }
 }
