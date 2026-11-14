@@ -1,9 +1,11 @@
 package com.thesismate.service;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -199,5 +201,44 @@ class GroupServiceTest {
         invitation();
         service.respondToInvitation(2L, 5L, false);
         assertStatus(409, () -> service.respondToInvitation(2L, 5L, true));
+    }
+
+        // ---- leader transfer ----
+
+    private void groupWithTwoMembers() {
+        when(members.findByGroupIdAndActiveTrue(10L))
+                .thenReturn(List.of(new GroupMember(group, leader), new GroupMember(group, invitee)));
+    }
+
+    @Test
+    void leaderCanTransferToAnotherMember() {
+        groupWithTwoMembers();
+        service.transferLeader(1L, 10L, "20000002");
+        assertSame(invitee, group.getLeader());
+    }
+
+    @Test
+    void onlyTheLeaderCanTransfer() {
+        groupWithTwoMembers();
+        assertStatus(403, () -> service.transferLeader(2L, 10L, "20000002"));
+        assertSame(leader, group.getLeader());
+    }
+
+    @Test
+    void cannotTransferToSomeoneOutsideTheGroup() {
+        when(members.findByGroupIdAndActiveTrue(10L)).thenReturn(List.of(new GroupMember(group, leader)));
+        assertStatus(400, () -> service.transferLeader(1L, 10L, "20000002"));
+        assertSame(leader, group.getLeader());
+    }
+
+    @Test
+    void cannotTransferToYourself() {
+        when(users.findByStudentId("20000001")).thenReturn(Optional.of(leader));
+        assertStatus(400, () -> service.transferLeader(1L, 10L, "20000001"));
+    }
+
+    @Test
+    void transferToUnknownStudentIdIsNotFound() {
+        assertStatus(404, () -> service.transferLeader(1L, 10L, "29999999"));
     }
 }

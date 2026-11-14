@@ -145,6 +145,30 @@ public class GroupService {
                 .toList();
     }
 
+    @Transactional
+    public GroupResponse transferLeader(Long userId, Long groupId, String studentId) {
+        StudentGroup group = groups.findByIdForUpdate(groupId)
+                .orElseThrow(() -> error(HttpStatus.NOT_FOUND, "Group not found"));
+        if (group.getStatus() != StudentGroup.Status.ACTIVE) {
+            throw error(HttpStatus.CONFLICT, "This group is no longer active");
+        }
+        if (!group.getLeader().getId().equals(userId)) {
+            throw error(HttpStatus.FORBIDDEN, "Only the current leader can transfer leadership");
+        }
+        AppUser newLeader = users.findByStudentId(studentId == null ? "" : studentId.trim())
+                .orElseThrow(() -> error(HttpStatus.NOT_FOUND, "No student with that ID"));
+        if (newLeader.getId().equals(userId)) {
+            throw error(HttpStatus.BAD_REQUEST, "You are already the leader");
+        }
+        boolean isMember = members.findByGroupIdAndActiveTrue(groupId).stream()
+                .anyMatch(m -> m.getMember().getId().equals(newLeader.getId()));
+        if (!isMember) {
+            throw error(HttpStatus.BAD_REQUEST, "That student is not a member of this group");
+        }
+        group.transferLeader(newLeader);
+        return toResponse(group);
+    }
+
     // ---- helpers ----
 
     private AppUser requireStudent(Long userId) {

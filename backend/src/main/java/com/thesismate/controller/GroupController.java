@@ -17,6 +17,7 @@ import com.thesismate.dto.CreateGroupRequest;
 import com.thesismate.dto.GroupResponse;
 import com.thesismate.dto.InvitationResponse;
 import com.thesismate.dto.InviteRequest;
+import com.thesismate.dto.TransferLeaderRequest;
 import com.thesismate.repository.AppUserRepository;
 import com.thesismate.service.GroupService;
 
@@ -67,6 +68,12 @@ public class GroupController {
     @PostMapping("/invitations/{invitationId}/decline")
     public InvitationResponse decline(@PathVariable Long invitationId, Authentication auth) {
         return groupService.respondToInvitation(currentUserId(auth), invitationId, false);
+    }
+
+    @PostMapping("/{groupId}/leader")
+    public GroupResponse transferLeader(@PathVariable Long groupId,
+                                        @Valid @RequestBody TransferLeaderRequest request, Authentication auth) {
+        return groupService.transferLeader(currentUserId(auth), groupId, request.studentId());
     }
 
     private Long currentUserId(Authentication auth) {
