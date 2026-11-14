@@ -6,6 +6,7 @@ import GroupsPage from './pages/GroupsPage';
 import HomePage from './pages/HomePage';
 import LoginPage, { AuthUser } from './pages/LoginPage';
 import MyCapacityPage from './pages/MyCapacityPage';
+import StudentRecordsPage from './pages/StudentRecordsPage';
 
 export default function App() {
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -40,6 +41,10 @@ export default function App() {
           <Route
             path="/supervisor/capacity"
             element={<MyCapacityPage user={user} authChecked={authChecked} />}
+          />
+          <Route
+            path="/coordinator/student-records"
+            element={<StudentRecordsPage user={user} authChecked={authChecked} />}
           />
         </Routes>
       </main>

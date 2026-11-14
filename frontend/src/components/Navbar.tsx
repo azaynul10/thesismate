@@ -27,6 +27,11 @@ export default function Navbar({ user, onLogout }: Props) {
               My Capacity
             </NavLink>
           )}
+          {user?.role === 'COORDINATOR' && (
+            <NavLink to="/coordinator/student-records" className={linkClass}>
+              Student Records
+            </NavLink>
+          )}
         </div>
         <div className="d-flex align-items-center gap-2">
           {user ? (
