@@ -7,6 +7,7 @@ import HomePage from './pages/HomePage';
 import LoginPage, { AuthUser } from './pages/LoginPage';
 import MyCapacityPage from './pages/MyCapacityPage';
 import StudentRecordsPage from './pages/StudentRecordsPage';
+import SubmissionWindowsPage from './pages/SubmissionWindowsPage';
 import SupervisionPage from './pages/SupervisionPage';
 import SupervisorDirectoryPage from './pages/SupervisorDirectoryPage';
 import SupervisorRequestsPage from './pages/SupervisorRequestsPage';
@@ -52,6 +53,10 @@ export default function App() {
           <Route
             path="/coordinator/student-records"
             element={<StudentRecordsPage user={user} authChecked={authChecked} />}
+          />
+          <Route
+            path="/coordinator/submission-windows"
+            element={<SubmissionWindowsPage user={user} authChecked={authChecked} />}
           />
           <Route
             path="/groups/supervision"
