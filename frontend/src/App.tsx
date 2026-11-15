@@ -8,6 +8,7 @@ import LoginPage, { AuthUser } from './pages/LoginPage';
 import MyCapacityPage from './pages/MyCapacityPage';
 import StudentRecordsPage from './pages/StudentRecordsPage';
 import SupervisionPage from './pages/SupervisionPage';
+import SupervisorDirectoryPage from './pages/SupervisorDirectoryPage';
 import SupervisorRequestsPage from './pages/SupervisorRequestsPage';
 
 export default function App() {
@@ -36,6 +37,10 @@ export default function App() {
         <Routes>
           <Route path="/" element={<HomePage user={user} />} />
           <Route path="/login" element={<LoginPage onLogin={setUser} />} />
+          <Route
+            path="/supervisors"
+            element={<SupervisorDirectoryPage user={user} authChecked={authChecked} />}
+          />
           <Route
             path="/groups"
             element={<GroupsPage user={user} authChecked={authChecked} />}
