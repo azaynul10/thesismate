@@ -28,9 +28,14 @@ export default function Navbar({ user, onLogout }: Props) {
             </>
           )}
           {user?.role === 'SUPERVISOR' && (
-            <NavLink to="/supervisor/capacity" className={linkClass}>
-              My Capacity
-            </NavLink>
+            <>
+              <NavLink to="/supervisor/requests" className={linkClass}>
+                Requests
+              </NavLink>
+              <NavLink to="/supervisor/capacity" className={linkClass}>
+                My Capacity
+              </NavLink>
+            </>
           )}
           {user?.role === 'COORDINATOR' && (
             <NavLink to="/coordinator/student-records" className={linkClass}>

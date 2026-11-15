@@ -61,6 +61,15 @@ export const supervisionApi = {
     }),
   withdraw: (requestId: number) =>
     api<SupervisionRequest>(`/supervision-requests/${requestId}/withdraw`, { method: 'POST' }),
+  pendingForSupervisor: () => api<SupervisionRequest[]>('/supervisor/requests'),
+  accept: (requestId: number) =>
+    api<SupervisionRequest>(`/supervisor/requests/${requestId}/accept`, { method: 'POST' }),
+  reject: (requestId: number, reason: string) =>
+    api<SupervisionRequest>(`/supervisor/requests/${requestId}/reject`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    }),
+  myGroups: () => api<Allocation[]>('/supervisor/groups'),
   availableSupervisors: async (semester: string, track: Track) => {
     const params = new URLSearchParams({
       semester,
