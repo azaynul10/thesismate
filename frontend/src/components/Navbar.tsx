@@ -18,9 +18,14 @@ export default function Navbar({ user, onLogout }: Props) {
         </Link>
         <div className="navbar-nav me-auto">
           {user?.role === 'STUDENT' && (
-            <NavLink to="/groups" className={linkClass}>
-              My Group
-            </NavLink>
+            <>
+              <NavLink to="/groups" end className={linkClass}>
+                My Group
+              </NavLink>
+              <NavLink to="/groups/supervision" className={linkClass}>
+                Supervision
+              </NavLink>
+            </>
           )}
           {user?.role === 'SUPERVISOR' && (
             <NavLink to="/supervisor/capacity" className={linkClass}>
