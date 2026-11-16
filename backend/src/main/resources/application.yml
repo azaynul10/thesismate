@@ -17,6 +17,11 @@ spring:
     open-in-view: false
   flyway:
     enabled: true
+  servlet:
+    multipart:
+      # F11 report upload: up to 20 MB per PDF, 3 PDFs per submission (report + 2 Turnitin reports).
+      max-file-size: 20MB
+      max-request-size: 60MB
 server:
   port: 8080
   servlet:

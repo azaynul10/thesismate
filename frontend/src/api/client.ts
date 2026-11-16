@@ -19,7 +19,7 @@ function getCookie(name: string): string | undefined {
 export async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
   const method = (options.method ?? 'GET').toUpperCase();
   const headers = new Headers(options.headers);
-  if (!headers.has('Content-Type') && options.body !== undefined) {
+  if (!headers.has('Content-Type') && options.body !== undefined && !(options.body instanceof FormData)) {
     headers.set('Content-Type', 'application/json');
   }
   if (!['GET', 'HEAD', 'OPTIONS', 'TRACE'].includes(method)) {

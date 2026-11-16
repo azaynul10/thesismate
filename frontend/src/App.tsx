@@ -6,6 +6,7 @@ import GroupsPage from './pages/GroupsPage';
 import HomePage from './pages/HomePage';
 import LoginPage, { AuthUser } from './pages/LoginPage';
 import MyCapacityPage from './pages/MyCapacityPage';
+import ReportsPage from './pages/ReportsPage';
 import StudentRecordsPage from './pages/StudentRecordsPage';
 import SubmissionWindowsPage from './pages/SubmissionWindowsPage';
 import SupervisionPage from './pages/SupervisionPage';
@@ -45,6 +46,10 @@ export default function App() {
           <Route
             path="/groups"
             element={<GroupsPage user={user} authChecked={authChecked} />}
+          />
+          <Route
+            path="/reports"
+            element={<ReportsPage user={user} authChecked={authChecked} />}
           />
           <Route
             path="/supervisor/capacity"
