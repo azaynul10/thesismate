@@ -33,6 +33,12 @@ export default function Navbar({ user, onLogout }: Props) {
               <NavLink to="/reports" className={linkClass}>
                 Reports
               </NavLink>
+              <NavLink to="/milestones" className={linkClass}>
+                Milestones
+              </NavLink>
+              <NavLink to="/weekly-reports" className={linkClass}>
+                Weekly Reports
+              </NavLink>
             </>
           )}
           {user?.role === 'SUPERVISOR' && (
@@ -42,6 +48,9 @@ export default function Navbar({ user, onLogout }: Props) {
               </NavLink>
               <NavLink to="/supervisor/capacity" className={linkClass}>
                 My Capacity
+              </NavLink>
+              <NavLink to="/supervisor/progress" className={linkClass}>
+                Progress
               </NavLink>
             </>
           )}
@@ -78,4 +87,4 @@ export default function Navbar({ user, onLogout }: Props) {
       </div>
     </nav>
   );
-}
+}
