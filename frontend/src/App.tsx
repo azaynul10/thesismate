@@ -5,13 +5,16 @@ import Navbar from './components/Navbar';
 import GroupsPage from './pages/GroupsPage';
 import HomePage from './pages/HomePage';
 import LoginPage, { AuthUser } from './pages/LoginPage';
+import MilestonesPage from './pages/MilestonesPage';
 import MyCapacityPage from './pages/MyCapacityPage';
 import ReportsPage from './pages/ReportsPage';
 import StudentRecordsPage from './pages/StudentRecordsPage';
 import SubmissionWindowsPage from './pages/SubmissionWindowsPage';
 import SupervisionPage from './pages/SupervisionPage';
 import SupervisorDirectoryPage from './pages/SupervisorDirectoryPage';
+import SupervisorProgressPage from './pages/SupervisorProgressPage';
 import SupervisorRequestsPage from './pages/SupervisorRequestsPage';
+import WeeklyReportsPage from './pages/WeeklyReportsPage';
 
 export default function App() {
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -71,8 +74,20 @@ export default function App() {
             path="/supervisor/requests"
             element={<SupervisorRequestsPage user={user} authChecked={authChecked} />}
           />
+          <Route
+            path="/milestones"
+            element={<MilestonesPage user={user} authChecked={authChecked} />}
+          />
+          <Route
+            path="/weekly-reports"
+            element={<WeeklyReportsPage user={user} authChecked={authChecked} />}
+          />
+          <Route
+            path="/supervisor/progress"
+            element={<SupervisorProgressPage user={user} authChecked={authChecked} />}
+          />
         </Routes>
       </main>
     </>
   );
-}
+}
